@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>バレー部 戦術ボード Pro Max (LINE安定版)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --court-color: #f39c12; --primary-bg: #1a1a1a; --accent-color: #2ecc71;
+            --s-color: #e74c3c; --oh-color: #3498db; --mb-color: #2ecc71; --op-color: #f1c40f; --libero-color: #ff69b4;
+        }
+        body { font-family: sans-serif; text-align: center; background-color: var(--primary-bg); color: white; margin: 0; padding: 10px; touch-action: manipulation; }
+        
+        .controls { margin-bottom: 8px; display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; }
+        button { padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; font-size: 11px; -webkit-appearance: none; }
+        
+        .mode-controls { background: #333; padding: 5px; border-radius: 10px; margin-bottom: 10px; display: inline-flex; gap: 5px; }
+        .mode-btn { background: #444; color: #aaa; }
+        .mode-btn.active { background: white; color: black; }
+
+        .rote-btn { background-color: #333; color: #fff; min-width: 55px; border: 1px solid #555; }
+        .rote-btn.active { background-color: var(--accent-color); color: #000; }
+        
+        .set-init-btn { background-color: #3498db; color: white; }
+        .save-btn { background-color: var(--accent-color); color: #000; }
+        .libero-mode-btn { background-color: #444; color: white; border: 2px solid #ff69b4; }
+        .libero-mode-btn.active { background-color: #ff69b4; color: white; box-shadow: 0 0 10px #ff69b4; }
+        .name-mode-btn { background-color: #444; color: white; border: 2px solid #3498db; }
+        .name-mode-btn.active { background-color: #3498db; color: white; box-shadow: 0 0 10px #3498db; }
+
+        #court-container { width: 310px; margin: 0 auto; position: relative; padding: 5px; }
+        #court {
+            width: 300px; height: 450px; background-color: var(--court-color);
+            border: 3px solid white; position: relative; margin: 0 auto; overflow: hidden;
+        }
+        .attack-line { position: absolute; top: 150px; width: 100%; height: 2px; background-color: rgba(255,255,255,0.8); }
+        .pos-num { position: absolute; color: rgba(255,255,255,0.3); font-size: 24px; font-weight: bold; pointer-events: none; }
+
+        .player {
+            width: 52px; height: 52px; border-radius: 50%; color: white; font-weight: bold; position: absolute;
+            display: flex; align-items: center; justify-content: center; font-size: 11px; z-index: 10;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: move; touch-action: none;
+            -webkit-user-select: none; user-select: none;
+        }
+
+        #all-rot-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; overflow-y: auto; padding: 20px 5px; }
+        .overlay-content { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; }
+        .mini-wrapper { background: #222; padding: 10px; border-radius: 8px; border: 1px solid #444; }
+        .overlay-btns { position: sticky; top: 0; background: rgba(0,0,0,0.8); padding: 10px; z-index: 1100; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="mode-controls">
+        <button class="mode-btn active" id="m-base" onclick="setMode('base')">基本</button>
+        <button class="mode-btn" id="m-serve" onclick="setMode('serve')">サーブ</button>
+        <button class="mode-btn" id="m-receive" onclick="setMode('receive')">キャッチ</button>
+    </div>
+    
+    <div class="controls">
+        <button id="name-mode-btn" class="name-mode-btn" onclick="toggleMode('name')">名前変更モード</button>
+        <button id="libero-mode-btn" class="libero-mode-btn" onclick="toggleMode('libero')">リベロ交代モード</button>
+    </div>
+
+    <div id="court-container">
+        <div id="court">
+            <div class="attack-line"></div>
+            <div class="pos-num" style="bottom:15px; right:15px;">1</div>
+            <div class="pos-num" style="top:15px; right:15px;">2</div>
+            <div class="pos-num" style="top:5px; left:140px;">3</div>
+            <div class="pos-num" style="top:15px; left:15px;">4</div>
+            <div class="pos-num" style="bottom:15px; left:15px;">5</div>
+            <div class="pos-num" style="bottom:5px; left:140px;">6</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="rote-btn active" id="r-0" onclick="changeRot(0)">ROT 1</button>
+        <button class="rote-btn" id="r-1" onclick="changeRot(1)">ROT 2</button>
+        <button class="rote-btn" id="r-2" onclick="changeRot(2)">ROT 3</button>
+        <button class="rote-btn" id="r-3" onclick="changeRot(3)">ROT 4</button>
+        <button class="rote-btn" id="r-4" onclick="changeRot(4)">ROT 5</button>
+        <button class="rote-btn" id="r-5" onclick="changeRot(5)">ROT 6</button>
+    </div>
+
+    <div class="controls" style="margin-top:10px;">
+        <button class="set-init-btn" onclick="saveAsInitial()">初期位置保存 📌</button>
+        <button class="save-btn" onclick="saveCurrentLayout()">今の形を保存 💾</button>
+    </div>
+
+    <div class="controls">
+        <button class="all-rot-btn" style="background:#9b59b6;color:white;" onclick="showAllRotations()">全表示 📊</button>
+        <button onclick="resetAll()" style="background:#e74c3c;color:white;">リセット 🔄</button>
+    </div>
+
+    <div id="all-rot-overlay">
+        <div class="overlay-btns">
+            <button onclick="closeOverlay()" style="background:#444; color:white;">閉じる</button>
+            <button onclick="bulkDownload()" style="background:#e67e22; color:white;">全保存 📥</button>
+        </div>
+        <div class="overlay-content" id="overlay-content"></div>
+    </div>
+
+    <script>
+        const court = document.getElementById('court');
+        let currentRot = 0;
+        let currentMode = 'base';
+        let activeMode = null; 
+        let tacticalData = {};
+        const posDefaults = [{t:375,l:245},{t:95,l:245},{t:75,l:150},{t:95,l:55},{t:375,l:55},{t:375,l:150}];
+
+        function resetAll() {
+            if (Object.keys(tacticalData).length > 0 && !confirm("全設定を消去しますか？")) return;
+            const players = [
+                { label: 'S', color: '#e74c3c' }, { label: 'OH1', color: '#3498db' },
+                { label: 'MB1', color: '#2ecc71' }, { label: 'OP', color: '#f1c40f' },
+                { label: 'OH2', color: '#3498db' }, { label: 'MB2', color: '#2ecc71' }
+            ];
+            for (let r = 0; r < 6; r++) {
+                tacticalData[r] = { base: [], serve: [], receive: [] };
+                players.forEach((p, i) => {
+                    const idx = (i + [0, 5, 4, 3, 2, 1][r]) % 6;
+                    const pos = posDefaults[idx];
+                    const pData = { ...p, top: pos.t, left: pos.l, origLabel: p.label, origColor: p.color };
+                    tacticalData[r].base.push({...pData});
+                    tacticalData[r].serve.push({...pData});
+                    tacticalData[r].receive.push({...pData});
+                });
+            }
+            render();
+        }
+
+        function render() {
+            court.querySelectorAll('.player').forEach(p => p.remove());
+            tacticalData[currentRot][currentMode].forEach((p, i) => {
+                const div = document.createElement('div');
+                div.className = 'player';
+                div.innerText = p.label;
+                div.style.backgroundColor = p.color;
+                div.style.top = (p.top - 26) + 'px';
+                div.style.left = (p.left - 26) + 'px';
+                
+                div.addEventListener('click', (e) => {
+                    if (activeMode === 'libero') {
+                        const targetLabel = (p.label === "L") ? p.origLabel : "L";
+                        const targetColor = (p.label === "L") ? p.origColor : "#ff69b4";
+                        
+                        // 全ローテの該当選手を一括変更
+                        for(let r=0; r<6; r++) {
+                            ['base','serve','receive'].forEach(m => {
+                                tacticalData[r][m][i].label = targetLabel;
+                                tacticalData[r][m][i].color = targetColor;
+                            });
+                        }
+                        render();
+                    } else if (activeMode === 'name') {
+                        const n = prompt("名前変更", p.label);
+                        if (n) {
+                            for(let r=0; r<6; r++) {
+                                ['base','serve','receive'].forEach(m => {
+                                    tacticalData[r][m][i].label = n;
+                                    tacticalData[r][m][i].origLabel = n;
+                                });
+                            }
+                            render();
+                        }
+                    }
+                });
+                court.appendChild(div);
+            });
+        }
+
+        function toggleMode(mode) {
+            if (activeMode === mode) activeMode = null;
+            else activeMode = mode;
+            document.getElementById('libero-mode-btn').classList.toggle('active', activeMode === 'libero');
+            document.getElementById('name-mode-btn').classList.toggle('active', activeMode === 'name');
+        }
+
+        function saveAsInitial() {
+            if (currentRot !== 0) return alert("ROT 1で設定してください");
+            const players = court.querySelectorAll('.player');
+            let newOrder = [];
+            players.forEach((el, i) => {
+                const x = parseInt(el.style.left) + 26; const y = parseInt(el.style.top) + 26;
+                let minIdx = 0; let minDist = Infinity;
+                posDefaults.forEach((pt, idx) => {
+                    const d = Math.sqrt((x-pt.l)**2 + (y-pt.t)**2);
+                    if(d < minDist) { minDist = d; minIdx = idx; }
+                });
+                const d = tacticalData[0].base[i];
+                newOrder.push({ label: d.label, color: d.color, origLabel: d.origLabel, origColor: d.origColor, homeIdx: minIdx });
+            });
+            for (let r = 0; r < 6; r++) {
+                tacticalData[r] = { base: [], serve: [], receive: [] };
+                newOrder.forEach(p => {
+                    const idx = (p.homeIdx + [0, 5, 4, 3, 2, 1][r]) % 6;
+                    const pos = posDefaults[idx];
+                    const pData = { label: p.label, color: p.color, origLabel: p.origLabel, origColor: p.origColor, top: pos.t, left: pos.l };
+                    tacticalData[r].base.push({...pData}); tacticalData[r].serve.push({...pData}); tacticalData[r].receive.push({...pData});
+                });
+            }
+            render(); alert("基本配置を登録しました");
+        }
+
+        function saveCurrentLayout() {
+            court.querySelectorAll('.player').forEach((el, i) => {
+                tacticalData[currentRot][currentMode][i].top = parseInt(el.style.top) + 26;
+                tacticalData[currentRot][currentMode][i].left = parseInt(el.style.left) + 26;
+            });
+            alert("現在の形を保存しました");
+        }
+
+        let dragTarget = null;
+        function startDrag(e) {
+            if (activeMode) return;
+            dragTarget = e.target.closest('.player');
+            if (!dragTarget) return;
+            e.preventDefault();
+            dragTarget.style.transition = 'none';
+            const rect = court.getBoundingClientRect();
+            const move = (ev) => {
+                if (!dragTarget) return;
+                const cx = ev.touches ? ev.touches[0].clientX : ev.clientX;
+                const cy = ev.touches ? ev.touches[0].clientY : ev.clientY;
+                dragTarget.style.left = (cx - rect.left - 26) + 'px';
+                dragTarget.style.top = (cy - rect.top - 26) + 'px';
+            };
+            const stop = () => {
+                if (dragTarget) dragTarget.style.transition = 'top 0.3s, left 0.3s';
+                dragTarget = null;
+                window.removeEventListener('mousemove', move);
+                window.removeEventListener('mouseup', stop);
+                window.removeEventListener('touchmove', move);
+                window.removeEventListener('touchend', stop);
+            };
+            window.addEventListener('mousemove', move);
+            window.addEventListener('mouseup', stop);
+            window.addEventListener('touchmove', move, {passive: false});
+            window.addEventListener('touchend', stop);
+        }
+
+        court.addEventListener('mousedown', startDrag);
+        court.addEventListener('touchstart', startDrag, {passive: false});
+
+        function setMode(m) { currentMode = m; document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); document.getElementById(`m-${m}`).classList.add('active'); render(); }
+        function changeRot(r) { currentRot = r; document.querySelectorAll('.rote-btn').forEach(b => b.classList.remove('active')); document.getElementById(`r-${r}`).classList.add('active'); render(); }
+        
+        function showAllRotations() {
+            const content = document.getElementById('overlay-content');
+            content.innerHTML = '';
+            document.getElementById('all-rot-overlay').style.display = 'block';
+            for (let r = 0; r < 6; r++) {
+                const wrap = document.createElement('div');
+                wrap.className = 'mini-wrapper'; wrap.id = `export-wrap-${r}`;
+                wrap.innerHTML = `<h4 style="margin:5px;font-size:12px;">ROT ${r+1}</h4>`;
+                const mc = document.createElement('div');
+                mc.style = `width:180px; height:270px; background:var(--court-color); border:2px solid white; position:relative; overflow:hidden;`;
+                tacticalData[r][currentMode].forEach(p => {
+                    const pd = document.createElement('div');
+                    pd.style = `position:absolute; width:30px; height:30px; border-radius:50%; background:${p.color}; color:white; font-size:7px; display:flex; align-items:center; justify-content:center; top:${p.top*0.6-15}px; left:${p.left*0.6-15}px; font-weight:bold;`;
+                    pd.innerText = p.label;
+                    mc.appendChild(pd);
+                });
+                wrap.appendChild(mc);
+                content.appendChild(wrap);
+            }
+        }
+
+        async function bulkDownload() {
+            for (let r = 0; r < 6; r++) {
+                const canvas = await html2canvas(document.getElementById(`export-wrap-${r}`), { scale: 2 });
+                const link = document.createElement('a');
+                link.download = `ROT${r+1}.png`; link.href = canvas.toDataURL(); link.click();
+                await new Promise(res => setTimeout(res, 500));
+            }
+        }
+        function closeOverlay() { document.getElementById('all-rot-overlay').style.display = 'none'; }
+
+        resetAll();
+    </script>
+</body>
+</html>

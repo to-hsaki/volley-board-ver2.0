@@ -3,54 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>バレー部 戦術ボード Pro Max (LINE安定版)</title>
+    <title>V-TACTICS BOARD PRO</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
-            --court-color: #f39c12; --primary-bg: #1a1a1a; --accent-color: #2ecc71;
+            --court-color: #f39c12; --primary-bg: #111111; --accent-color: #2ecc71;
             --s-color: #e74c3c; --oh-color: #3498db; --mb-color: #2ecc71; --op-color: #f1c40f; --libero-color: #ff69b4;
         }
-        body { font-family: sans-serif; text-align: center; background-color: var(--primary-bg); color: white; margin: 0; padding: 10px; touch-action: manipulation; }
-        
-        .controls { margin-bottom: 8px; display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; }
-        button { padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; font-size: 11px; -webkit-appearance: none; }
-        
-        .mode-controls { background: #333; padding: 5px; border-radius: 10px; margin-bottom: 10px; display: inline-flex; gap: 5px; }
-        .mode-btn { background: #444; color: #aaa; }
-        .mode-btn.active { background: white; color: black; }
+        body { font-family: 'Avenir', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif; text-align: center; background-color: var(--primary-bg); color: white; margin: 0; padding: 10px; touch-action: manipulation; }
 
-        .rote-btn { background-color: #333; color: #fff; min-width: 55px; border: 1px solid #555; }
-        .rote-btn.active { background-color: var(--accent-color); color: #000; }
+        /* かっこいいタイトルのスタイル */
+        .app-header {
+            margin: 10px 0 20px 0;
+            padding: 10px;
+        }
+        .main-title {
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            margin: 0;
+            background: linear-gradient(135deg, #fff 0%, #888 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            font-style: italic;
+        }
+        .sub-title {
+            font-size: 10px;
+            color: var(--accent-color);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-top: -5px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .sub-title::before, .sub-title::after {
+            content: "";
+            height: 1px;
+            width: 30px;
+            background-color: var(--accent-color);
+            opacity: 0.5;
+        }
+
+        /* 既存のコントロール系の維持 */
+        .controls { margin-bottom: 8px; display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; }
+        button { padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; font-size: 11px; -webkit-appearance: none; transition: transform 0.1s; }
+        button:active { transform: scale(0.95); }
         
-        .set-init-btn { background-color: #3498db; color: white; }
+        .mode-controls { background: #222; padding: 5px; border-radius: 12px; margin-bottom: 15px; display: inline-flex; gap: 5px; border: 1px solid #333; }
+        .mode-btn { background: transparent; color: #666; border-radius: 8px; }
+        .mode-btn.active { background: white; color: black; box-shadow: 0 2px 10px rgba(255,255,255,0.2); }
+
+        .rote-btn { background-color: #222; color: #fff; min-width: 55px; border: 1px solid #444; }
+        .rote-btn.active { background-color: var(--accent-color); color: #000; border-color: var(--accent-color); }
+        
+        .set-init-btn { background-color: #222; color: #3498db; border: 1px solid #3498db; }
         .save-btn { background-color: var(--accent-color); color: #000; }
-        .libero-mode-btn { background-color: #444; color: white; border: 2px solid #ff69b4; }
-        .libero-mode-btn.active { background-color: #ff69b4; color: white; box-shadow: 0 0 10px #ff69b4; }
-        .name-mode-btn { background-color: #444; color: white; border: 2px solid #3498db; }
-        .name-mode-btn.active { background-color: #3498db; color: white; box-shadow: 0 0 10px #3498db; }
+        .libero-mode-btn { background-color: #222; color: #ff69b4; border: 1px solid #ff69b4; }
+        .libero-mode-btn.active { background-color: #ff69b4; color: white; box-shadow: 0 0 15px rgba(255,105,180,0.4); }
+        .name-mode-btn { background-color: #222; color: #3498db; border: 1px solid #3498db; }
+        .name-mode-btn.active { background-color: #3498db; color: white; box-shadow: 0 0 15px rgba(52,152,219,0.4); }
 
         #court-container { width: 310px; margin: 0 auto; position: relative; padding: 5px; }
         #court {
             width: 300px; height: 450px; background-color: var(--court-color);
-            border: 3px solid white; position: relative; margin: 0 auto; overflow: hidden;
+            border: 4px solid white; position: relative; margin: 0 auto; overflow: hidden;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            border-radius: 4px;
         }
         .attack-line { position: absolute; top: 150px; width: 100%; height: 2px; background-color: rgba(255,255,255,0.8); }
         .pos-num { position: absolute; color: rgba(255,255,255,0.3); font-size: 24px; font-weight: bold; pointer-events: none; }
 
         .player {
-            width: 52px; height: 52px; border-radius: 50%; color: white; font-weight: bold; position: absolute;
+            width: 52px; height: 52px; border-radius: 50%; color: white; font-weight: 800; position: absolute;
             display: flex; align-items: center; justify-content: center; font-size: 11px; z-index: 10;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: move; touch-action: none;
-            -webkit-user-select: none; user-select: none;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4); cursor: move; touch-action: none;
+            -webkit-user-select: none; user-select: none; border: 2px solid rgba(255,255,255,0.2);
         }
 
         #all-rot-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; overflow-y: auto; padding: 20px 5px; }
         .overlay-content { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; }
-        .mini-wrapper { background: #222; padding: 10px; border-radius: 8px; border: 1px solid #444; }
-        .overlay-btns { position: sticky; top: 0; background: rgba(0,0,0,0.8); padding: 10px; z-index: 1100; margin-bottom: 10px; }
+        .mini-wrapper { background: #1a1a1a; padding: 10px; border-radius: 12px; border: 1px solid #333; }
+        .overlay-btns { position: sticky; top: 0; background: rgba(0,0,0,0.8); padding: 15px; z-index: 1100; margin-bottom: 10px; border-bottom: 1px solid #333; backdrop-filter: blur(5px); }
     </style>
 </head>
 <body>
+
+    <header class="app-header">
+        <h1 class="main-title">V-Tactics</h1>
+        <div class="sub-title">Strategy Board Pro</div>
+    </header>
 
     <div class="mode-controls">
         <button class="mode-btn active" id="m-base" onclick="setMode('base')">基本</button>
@@ -59,8 +104,8 @@
     </div>
     
     <div class="controls">
-        <button id="name-mode-btn" class="name-mode-btn" onclick="toggleMode('name')">名前変更モード</button>
-        <button id="libero-mode-btn" class="libero-mode-btn" onclick="toggleMode('libero')">リベロ交代モード</button>
+        <button id="name-mode-btn" class="name-mode-btn" onclick="toggleMode('name')">名前変更</button>
+        <button id="libero-mode-btn" class="libero-mode-btn" onclick="toggleMode('libero')">リベロ交代</button>
     </div>
 
     <div id="court-container">
@@ -84,20 +129,20 @@
         <button class="rote-btn" id="r-5" onclick="changeRot(5)">ROT 6</button>
     </div>
 
-    <div class="controls" style="margin-top:10px;">
-        <button class="set-init-btn" onclick="saveAsInitial()">初期位置保存 📌</button>
-        <button class="save-btn" onclick="saveCurrentLayout()">今の形を保存 💾</button>
+    <div class="controls" style="margin-top:15px;">
+        <button class="set-init-btn" onclick="saveAsInitial()">初期位置登録</button>
+        <button class="save-btn" onclick="saveCurrentLayout()">今の形を保存</button>
     </div>
 
-    <div class="controls">
-        <button class="all-rot-btn" style="background:#9b59b6;color:white;" onclick="showAllRotations()">全表示 📊</button>
-        <button onclick="resetAll()" style="background:#e74c3c;color:white;">リセット 🔄</button>
+    <div class="controls" style="margin-top:10px;">
+        <button class="all-rot-btn" style="background: linear-gradient(to bottom, #9b59b6, #8e44ad); color:white; width: 100px;" onclick="showAllRotations()">全表示 📊</button>
+        <button onclick="resetAll()" style="background:#333; color:#e74c3c; border:1px solid #e74c3c;">リセット</button>
     </div>
 
     <div id="all-rot-overlay">
         <div class="overlay-btns">
             <button onclick="closeOverlay()" style="background:#444; color:white;">閉じる</button>
-            <button onclick="bulkDownload()" style="background:#e67e22; color:white;">全保存 📥</button>
+            <button onclick="bulkDownload()" style="background: linear-gradient(to bottom, #e67e22, #d35400); color:white;">全画像保存 📥</button>
         </div>
         <div class="overlay-content" id="overlay-content"></div>
     </div>
@@ -109,6 +154,7 @@
         let activeMode = null; 
         let tacticalData = {};
         const posDefaults = [{t:375,l:245},{t:95,l:245},{t:75,l:150},{t:95,l:55},{t:375,l:55},{t:375,l:150}];
+        const modeJP = { 'base': '基本', 'serve': 'サーブ', 'receive': 'キャッチ' };
 
         function resetAll() {
             if (Object.keys(tacticalData).length > 0 && !confirm("全設定を消去しますか？")) return;
@@ -145,8 +191,6 @@
                     if (activeMode === 'libero') {
                         const targetLabel = (p.label === "L") ? p.origLabel : "L";
                         const targetColor = (p.label === "L") ? p.origColor : "#ff69b4";
-                        
-                        // 全ローテの該当選手を一括変更
                         for(let r=0; r<6; r++) {
                             ['base','serve','receive'].forEach(m => {
                                 tacticalData[r][m][i].label = targetLabel;
@@ -251,10 +295,11 @@
             const content = document.getElementById('overlay-content');
             content.innerHTML = '';
             document.getElementById('all-rot-overlay').style.display = 'block';
+            const modeName = modeJP[currentMode];
             for (let r = 0; r < 6; r++) {
                 const wrap = document.createElement('div');
                 wrap.className = 'mini-wrapper'; wrap.id = `export-wrap-${r}`;
-                wrap.innerHTML = `<h4 style="margin:5px;font-size:12px;">ROT ${r+1}</h4>`;
+                wrap.innerHTML = `<h4 style="margin:5px;font-size:12px;">ROT ${r+1} (${modeName})</h4>`;
                 const mc = document.createElement('div');
                 mc.style = `width:180px; height:270px; background:var(--court-color); border:2px solid white; position:relative; overflow:hidden;`;
                 tacticalData[r][currentMode].forEach(p => {
@@ -269,10 +314,13 @@
         }
 
         async function bulkDownload() {
+            const modeName = modeJP[currentMode];
             for (let r = 0; r < 6; r++) {
                 const canvas = await html2canvas(document.getElementById(`export-wrap-${r}`), { scale: 2 });
                 const link = document.createElement('a');
-                link.download = `ROT${r+1}.png`; link.href = canvas.toDataURL(); link.click();
+                link.download = `ROT${r+1}_${modeName}.png`; 
+                link.href = canvas.toDataURL(); 
+                link.click();
                 await new Promise(res => setTimeout(res, 500));
             }
         }
